@@ -1,10 +1,8 @@
 package ru.khomara.yaqt.expression;
 
-import ru.khomara.yaqt.Type;
-
 public class StringConstant extends Constant<String> {
     @Override
-    public Type type() {
+    public AbstractType type() {
         return null;
     }
 }

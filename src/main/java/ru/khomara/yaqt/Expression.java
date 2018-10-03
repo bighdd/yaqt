@@ -1,8 +1,10 @@
 package ru.khomara.yaqt;
 
+import ru.khomara.yaqt.expression.AbstractType;
+
 public interface Expression {
 
-    Type type();
+    AbstractType type();
 
     Expression reduce();
 
