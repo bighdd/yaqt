@@ -4,6 +4,7 @@ import com.google.common.collect.ImmutableList;
 import org.jetbrains.annotations.NotNull;
 import ru.khomara.yaqt.*;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.function.BiFunction;
@@ -93,6 +94,40 @@ public abstract class AbstractExpression implements Expression {
         return accumulator.apply(this, arguments().stream().map(argument -> argument.accumulate(accumulator)));
     }
 
+    /*
+     * PROTECTED
+     */
+
+    protected boolean isConstant0() {
+        return false;
+    }
+
+    protected abstract boolean isSupported0(@NotNull RequestBuilder<?> builder);
+
+    @NotNull
+    protected List<AbstractExpression> optimize0() {
+        return Collections.singletonList(this);
+    }
+
+    @NotNull
+    protected abstract List<AbstractExpression> reduceToSupported0(RequestBuilder<?> builder);
+
+    @NotNull
+    protected List<AbstractExpression> resolve0(@NotNull Context context) {
+        return Collections.singletonList(this);
+    }
+
+    @NotNull
+    protected abstract <R> R transform0(@NotNull RequestBuilder<R> builder, Stream<R> args);
+
+    @NotNull
+    protected abstract Value<?> apply0(@NotNull DataSupplier dataSupplier, Stream<Value<?>> args);
+
+    @NotNull
+    protected List<AbstractExpression> cloneArguments() {
+        return arguments.stream().map(AbstractExpression::clone).collect(Collectors.toList());
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -104,33 +139,5 @@ public abstract class AbstractExpression implements Expression {
     @Override
     public int hashCode() {
         return Objects.hash(arguments);
-    }
-
-    /*
-     * PROTECTED
-     */
-
-    protected abstract boolean isConstant0();
-
-    protected abstract boolean isSupported0(@NotNull RequestBuilder<?> builder);
-
-    @NotNull
-    protected abstract List<AbstractExpression> optimize0();
-
-    @NotNull
-    protected abstract List<AbstractExpression> reduceToSupported0(RequestBuilder<?> builder);
-
-    @NotNull
-    protected abstract List<AbstractExpression> resolve0(@NotNull Context context);
-
-    @NotNull
-    protected abstract <R> R transform0(@NotNull RequestBuilder<R> builder, Stream<R> args);
-
-    @NotNull
-    protected abstract Value<?> apply0(@NotNull DataSupplier dataSupplier, Stream<Value<?>> args);
-
-    @NotNull
-    protected List<AbstractExpression> cloneArguments() {
-        return arguments.stream().map(AbstractExpression::clone).collect(Collectors.toList());
     }
 }
