@@ -9,14 +9,28 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+/*
+ Represents type of expression.
+ Supported types:
+ <li>String
+ <li>Boolean
+ <li>Date
+ <li>Float
+ <li>Integer
+ Synthetic types:
+ <li>Same
+ <li>Any
+ */
 public class AbstractType<T> implements Type<T> {
     public static final AbstractType<String> STRING = new AbstractType<>("STRING", String.class);
     public static final AbstractType<Boolean> BOOLEAN = new AbstractType<>("BOOLEAN", Boolean.class);
     public static final AbstractType<Date> DATE = new AbstractType<>("DATE", Date.class);
     public static final AbstractType<Double> FLOAT = new AbstractType<>("FLOAT", Double.class);
     public static final AbstractType<Long> INTEGER = new AbstractType<>("INTEGER", Long.class);
+    protected static final AbstractType<?> SAME = new AbstractType<>("SAME", null);
+    protected static final AbstractType<?> ANY = new AbstractType<>("ANY", null);
 
-    private static final Map<Class<?>, Type<?>> TYPES_MAP = Stream.of(STRING, FLOAT, INTEGER, BOOLEAN, DATE)
+    private static final Map<Class<?>, AbstractType<?>> TYPES_MAP = Stream.of(STRING, FLOAT, INTEGER, BOOLEAN, DATE)
             .collect(Collectors.toMap(AbstractType::getClazz, Function.identity()));
 
     private static class CastFunction<T, R> {
@@ -85,7 +99,7 @@ public class AbstractType<T> implements Type<T> {
     private final Class<T> clazz;
 
     private AbstractType(String name, Class<T> clazz) {
-        this.name = name;
+        this.name = name.toUpperCase();
         this.clazz = clazz;
     }
 
@@ -105,13 +119,34 @@ public class AbstractType<T> implements Type<T> {
     }
 
     public boolean castable(Type<?> that) {
-        return CAST_FUNCTION_LUT.containsKey(Pair.of(this, that));
+        return this == ANY || that == ANY || CAST_FUNCTION_LUT.containsKey(Pair.of(this, that));
     }
 
-    public static <T> Type<T> get(Class<T> clazz) {
+    public boolean isSame() {
+        return this == SAME;
+    }
+
+    public boolean isSpecific() {
+        return this != ANY;
+    }
+
+    public static <T> AbstractType<T> get(Class<T> clazz) {
         return Optional.ofNullable(TYPES_MAP.get(clazz))
-                .map(type -> (Type<T>) type)
+                .map(type -> (AbstractType<T>) type)
                 .orElseThrow(() -> new IllegalArgumentException("Unknown type: class=" + clazz.getName()));
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Type<?> that = (Type<?>) o;
+        return this == ANY || that == ANY;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(name);
     }
 
     @Override

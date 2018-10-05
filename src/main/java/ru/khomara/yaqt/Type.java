@@ -1,11 +1,15 @@
 package ru.khomara.yaqt;
 
+import org.jetbrains.annotations.NotNull;
+
 import java.util.function.Function;
 
 public interface Type<T> {
+    @NotNull
     String getName();
 
-    <R> Function<T, R> asCast(Type<R> that);
+    @NotNull
+    <R> Function<T, R> asCast(@NotNull Type<R> that);
 
-    boolean castable(Type<?> that);
+    boolean castable(@NotNull Type<?> that);
 }

@@ -32,6 +32,11 @@
             <artifactId>guava</artifactId>
             <version>26.0-jre</version>
         </dependency>
+        <dependency>
+            <groupId>org.jetbrains</groupId>
+            <artifactId>annotations</artifactId>
+            <version>16.0.3</version>
+        </dependency>
     </dependencies>
 
     <build>
@@ -50,7 +55,5 @@
             </plugin>
         </plugins>
     </build>
-
-    <!-- Additional lines to be added here... -->
 
 </project>
