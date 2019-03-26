@@ -45,6 +45,11 @@
                 <groupId>org.antlr</groupId>
                 <artifactId>antlr4-maven-plugin</artifactId>
                 <version>4.7.1</version>
+                <configuration>
+                    <sourceDirectory>src/main/antlr4/ru/khomara/yaqt</sourceDirectory>
+                    <listener>false</listener>
+                    <visitor>true</visitor>
+                </configuration>
                 <executions>
                     <execution>
                         <goals>

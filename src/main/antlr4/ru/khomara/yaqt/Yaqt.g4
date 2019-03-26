@@ -1,7 +1,7 @@
-grammar yaqt;
+grammar Yaqt;
 
 parse
- : ( sql_stmt_list | error )* EOF
+ : ( stmt | error )* EOF
  ;
 
 error
@@ -11,13 +11,63 @@ error
    }
  ;
 
-sql_stmt_list
- : ';'* sql_stmt ( ';'+ sql_stmt )* ';'*
+stmt
+ : tnsnames select_stmt
  ;
 
-sql_stmt
- : select_stmt
+//----------------------------------------------------------------------------
+// TNSNAMES Simplified
+//----------------------------------------------------------------------------
+
+tnsnames
+ : (tns_entry)*
  ;
+
+tns_entry
+ : alias EQ (description)
+ ;
+
+alias
+ : ID
+ | ID (DOT ID)+
+ ;
+
+description
+ : OPEN_PAR K_DESCRIPTION EQ (parameter_list)? ( address_list | address ) connect_data CLOSE_PAR
+ ;
+
+address_list
+ : OPEN_PAR K_ADDRESS_LIST EQ (parameter_list)? (address)+ CLOSE_PAR
+ ;
+
+address
+ : OPEN_PAR K_ADDRESS EQ parameter_list CLOSE_PAR
+ ;
+
+connect_data
+ : OPEN_PAR K_CONNECT_DATA EQ parameter_list CLOSE_PAR
+ ;
+
+parameter_list
+ : parameter+
+ ;
+
+parameter
+ : OPEN_PAR parameter_name EQ parameter_value CLOSE_PAR
+ ;
+
+parameter_name
+ : ID
+ ;
+
+// TODO: [MAJOR] to add other constants
+parameter_value
+ : STRING_LITERAL
+ ;
+
+//----------------------------------------------------------------------------
+// STATEMENT Simplified
+//----------------------------------------------------------------------------
 
 select_stmt
  : ( K_WITH K_RECURSIVE? common_table_expression ( ',' common_table_expression )* )?
@@ -67,7 +117,6 @@ expr
  | function_name '(' ( K_DISTINCT? expr ( ',' expr )* | '*' )? ')'
  | '(' expr ')'
  | K_CAST '(' expr K_AS type_name ')'
- | expr K_COLLATE collation_name
  | expr K_NOT? ( K_LIKE | K_GLOB | K_REGEXP | K_MATCH ) expr ( K_ESCAPE expr )?
  | expr ( K_ISNULL | K_NOTNULL | K_NOT K_NULL )
  | expr K_IS K_NOT? expr
@@ -89,7 +138,7 @@ raise_function
  ;
 
 ordering_term
- : expr ( K_COLLATE collation_name )? ( K_ASC | K_DESC )?
+ : expr ( K_ASC | K_DESC )?
  ;
 
 common_table_expression
@@ -104,8 +153,6 @@ result_column
 
 table_or_subquery
  : ( database_name '.' )? table_name ( K_AS? table_alias )?
-   ( K_INDEXED K_BY index_name
-   | K_NOT K_INDEXED )?
  | '(' ( table_or_subquery ( ',' table_or_subquery )*
        | join_clause )
    ')' ( K_AS? table_alias )?
@@ -167,6 +214,8 @@ keyword
  : K_ABORT
  | K_ACTION
  | K_ADD
+ | K_ADDRESS
+ | K_ADDRESS_LIST
  | K_AFTER
  | K_ALL
  | K_ALTER
@@ -200,6 +249,7 @@ keyword
  | K_DEFERRED
  | K_DELETE
  | K_DESC
+ | K_DESCRIPTION
  | K_DETACH
  | K_DISTINCT
  | K_DROP
@@ -312,14 +362,6 @@ column_name
  : any_name
  ;
 
-collation_name
- : any_name
- ;
-
-index_name
- : any_name
- ;
-
 table_alias
  : any_name
  ;
@@ -355,11 +397,15 @@ GT_EQ : '>=';
 EQ : '==';
 NOT_EQ1 : '!=';
 NOT_EQ2 : '<>';
+D_QUOTE : '"' ;
+S_QUOTE : '\'' ;
 
 // http://www.sqlite.org/lang_keywords.html
 K_ABORT : A B O R T;
 K_ACTION : A C T I O N;
 K_ADD : A D D;
+K_ADDRESS : A D D R E S S;
+K_ADDRESS_LIST : K_ADDRESS '_' L I S T;
 K_AFTER : A F T E R;
 K_ALL : A L L;
 K_ALTER : A L T E R;
@@ -381,6 +427,7 @@ K_COLLATE : C O L L A T E;
 K_COLUMN : C O L U M N;
 K_COMMIT : C O M M I T;
 K_CONFLICT : C O N F L I C T;
+K_CONNECT_DATA : C O N N E C T '_' D A T A;
 K_CONSTRAINT : C O N S T R A I N T;
 K_CREATE : C R E A T E;
 K_CROSS : C R O S S;
@@ -393,6 +440,7 @@ K_DEFERRABLE : D E F E R R A B L E;
 K_DEFERRED : D E F E R R E D;
 K_DELETE : D E L E T E;
 K_DESC : D E S C;
+K_DESCRIPTION : D E S C R I P T I O N;
 K_DETACH : D E T A C H;
 K_DISTINCT : D I S T I N C T;
 K_DROP : D R O P;
@@ -489,6 +537,10 @@ IDENTIFIER
  | [a-zA-Z_] [a-zA-Z_0-9]* // TODO check: needs more chars in set
  ;
 
+ID
+ : [A-Za-z0-9][A-Za-z0-9_\-.]*
+ ;
+
 NUMERIC_LITERAL
  : DIGIT+ ( '.' DIGIT* )? ( E [-+]? DIGIT+ )?
  | '.' DIGIT+ ( E [-+]? DIGIT+ )?
@@ -502,6 +554,9 @@ BIND_PARAMETER
 STRING_LITERAL
  : '\'' ( ~'\'' | '\'\'' )* '\''
  ;
+
+DQ_STRING
+ : D_QUOTE (~'"')* D_QUOTE ;
 
 BLOB_LITERAL
  : X STRING_LITERAL
